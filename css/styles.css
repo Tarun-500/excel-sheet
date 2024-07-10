@@ -1,0 +1,16 @@
+ul li {
+    list-style: none;
+}
+
+button{
+    padding: 10px 20px;
+    color: #fff;
+    background: #000;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+input{
+    padding: 10px 20px;
+    border-radius: 5px;
+}

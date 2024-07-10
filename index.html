@@ -5,27 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SpreadJS Excel Sheet</title>
     <link rel="stylesheet" href="css/styles.css" />
+
     <!-- Load SpreadJS library -->
     <link rel="stylesheet" type="text/css" href="https://developer.mescius.com/spreadjs/demos/en/purejs/node_modules/@mescius/spread-sheets/styles/gc.spread.sheets.excel2013white.css" />
     <script src="https://developer.mescius.com/spreadjs/demos/en/purejs/node_modules/@mescius/spread-sheets/dist/gc.spread.sheets.all.min.js" type="text/javascript"></script>
     <script src="https://developer.mescius.com/spreadjs/demos/spread/source/js/license.js" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdn.grapecity.com/spreadjs/14.2.3/css/gc.spread.sheets.designer.min.css" />
     <script src="https://cdn.grapecity.com/spreadjs/14.2.3/js/gc.spread.sheets.designer.min.js"></script>
+
     <link rel="stylesheet" type="text/css" href="css/styles.css" />
+
+    <style>
+        #repeated-row .delete-button {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div>
+    <div style="margin-bottom: 50px;">
         <ul id="input-list">
-            <li>
-                <span>Rows </span> <input type="text" class="rows-input" />
-                <span>Name </span> <input type="text" class="name-input" />
+            <li id="repeated-row" data-row-index="1" data-inserted="false">
+                <span>Rows </span> <input type="number" class="rows-input" />
+                <span>Time </span> <input type="time" class="time-input" />
                 <button class="submit-button">Submit</button>
-                <button class="delete-button">Delete</button>
+                <!-- <button class="delete-button">Delete</button> -->
             </li>
         </ul>
         <button id="add-row-button">Add Row</button>
     </div>
     <div id="ss" style="width: 100%; height: 600px"></div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             if (typeof GC !== 'undefined' && GC.Spread.Sheets) {
@@ -46,12 +55,20 @@
                 headerStyle.borderBottom = new GC.Spread.Sheets.LineBorder("#000000", GC.Spread.Sheets.LineStyle.thin);
 
                 // Set header values
-                sheet.setValue(0, 0, "ID");
-                sheet.setValue(0, 1, "Name");
+                sheet.setValue(0, 0, new Date().toDateString()); // Set today's date in the first cell
+                sheet.setValue(1, 0, "ID");
+                sheet.setValue(1, 1, "Course");
+                sheet.setValue(1, 2, "FCP");
+                sheet.setValue(1, 3, "Class");
+                sheet.setValue(1, 4, "T/O");
+                sheet.setValue(1, 5, "Area");
+                sheet.setValue(1, 6, "Status");
+                sheet.setValue(1, 7, "Users"); 
 
                 // Apply header style
-                sheet.setStyle(0, 0, headerStyle);
-                sheet.setStyle(0, 1, headerStyle);
+                for (var col = 0; col <= 7; col++) {
+                    sheet.setStyle(1, col, headerStyle);
+                }
 
                 // Apply styles to cells
                 var cellStyle = new GC.Spread.Sheets.Style();
@@ -59,43 +76,24 @@
                 cellStyle.hAlign = GC.Spread.Sheets.HorizontalAlign.left;
                 cellStyle.vAlign = GC.Spread.Sheets.VerticalAlign.center;
 
-                function addRows(sheet, rowCount, name) {
-                    var startRow = 1; // Start after the header row
-                    var currentRow = startRow;
-
-                    // Find the first empty row
-                    while (sheet.getValue(currentRow, 0) !== null) {
-                        currentRow++;
-                    }
-
-                    sheet.addRows(currentRow, rowCount); // Add rows to the sheet
+                function addRows(sheet, rowCount, time, startRow) {
+                    sheet.addRows(startRow, rowCount); // Add rows to the sheet
                     for (var i = 0; i < rowCount; i++) {
-                        sheet.setValue(currentRow + i, 0, currentRow + i); // Set ID
-                        sheet.setValue(currentRow + i, 1, name); // Set Name
+                        sheet.setValue(startRow + i, 0, startRow + i - 1); // Set ID (adjusted for header rows)
+                        sheet.setValue(startRow + i, 4, time); // Set time in T/O column
+                        sheet.setValue(startRow + i, 7, 'user' + (startRow + i - 1)); // Set user in Users column (adjusted for header rows)
                     }
                     // Apply cell style
-                    for (var row = currentRow; row < currentRow + rowCount; row++) {
-                        for (var col = 0; col <= 1; col++) {
+                    for (var row = startRow; row < startRow + rowCount; row++) {
+                        for (var col = 0; col <= 7; col++) {
                             sheet.setStyle(row, col, cellStyle);
                         }
                     }
                 }
 
-                function updateRow(sheet, rowIndex, rowCount, name) {
-                    // Clear existing rows
-                    sheet.deleteRows(rowIndex, rowCount);
-
-                    // Add new rows
-                    sheet.addRows(rowIndex, rowCount);
+                function updateRow(sheet, rowIndex, rowCount, time) {
                     for (var i = 0; i < rowCount; i++) {
-                        sheet.setValue(rowIndex + i, 0, rowIndex + i); // Set ID
-                        sheet.setValue(rowIndex + i, 1, name); // Set Name
-                    }
-                    // Apply cell style
-                    for (var row = rowIndex; row < rowIndex + rowCount; row++) {
-                        for (var col = 0; col <= 1; col++) {
-                            sheet.setStyle(row, col, cellStyle);
-                        }
+                        sheet.setValue(rowIndex + i, 4, time); // Update time in T/O column
                     }
                 }
 
@@ -103,34 +101,49 @@
                     sheet.deleteRows(rowIndex, rowCount);
                 }
 
+                var currentRowIndex = 2; // Initialize a counter for the current row index
+
                 function addNewInputRow() {
                     var ul = document.getElementById('input-list');
                     var newLi = document.createElement('li');
-                    newLi.innerHTML = `
-                        <span>Rows </span> <input type="text" class="rows-input" />
-                        <span>Name </span> <input type="text" class="name-input" />
-                        <button class="submit-button">Submit</button>
-                        <button class="delete-button">Delete</button>
-                    `;
+                    newLi.id = 'row-' + currentRowIndex; // Assign a unique ID
+
+                    newLi.innerHTML = 
+                        '<span>Rows </span> <input type="number" class="rows-input" />' +
+                        ' <span> Time </span> <input type="time" class="time-input" /> ' +
+                        '<button class="submit-button">Submit</button>' ;
+                        // '<button class="delete-button">Delete</button>';
+                    
+                    newLi.setAttribute('data-row-index', currentRowIndex); // Set the row index
+                    newLi.setAttribute('data-inserted', 'false'); // Add a data attribute to track insertion
                     ul.appendChild(newLi);
 
                     // Add event listener for the new submit button
                     newLi.querySelector('.submit-button').addEventListener('click', function () {
                         var li = this.parentElement;
                         var rowsInput = li.querySelector('.rows-input').value;
-                        var nameInput = li.querySelector('.name-input').value;
+                        var timeInput = li.querySelector('.time-input').value;
                         var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
-                        addRows(sheet, parseInt(rowsInput), nameInput);
+
+                        if (li.getAttribute('data-inserted') === 'false') {
+                            // Insert new data
+                            addRows(sheet, parseInt(rowsInput), timeInput, currentRowIndex);
+                            li.setAttribute('data-inserted', 'true'); // Mark as inserted
+                            currentRowIndex += parseInt(rowsInput); // Update the current row index
+                        } else {
+                            // Update existing data
+                            updateRow(sheet, rowIndex, parseInt(rowsInput), timeInput);
+                        }
                     });
 
                     // Add event listener for the delete button
-                    newLi.querySelector('.delete-button').addEventListener('click', function () {
-                        var li = this.parentElement;
-                        var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
-                        var rowsInput = li.querySelector('.rows-input').value;
-                        deleteRow(sheet, rowIndex, parseInt(rowsInput));
-                        ul.removeChild(newLi);
-                    });
+                    // newLi.querySelector('.delete-button').addEventListener('click', function () {
+                    //     var li = this.parentElement;
+                    //     var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
+                    //     var rowsInput = li.querySelector('.rows-input').value;
+                    //     deleteRow(sheet, rowIndex, parseInt(rowsInput));
+                    //     ul.removeChild(newLi);
+                    // });
                 }
 
                 // Add event listeners for buttons
@@ -138,25 +151,70 @@
                     button.addEventListener('click', function () {
                         var li = this.parentElement;
                         var rowsInput = li.querySelector('.rows-input').value;
-                        var nameInput = li.querySelector('.name-input').value;
+                        var timeInput = li.querySelector('.time-input').value;
                         var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
-                        addRows(sheet, parseInt(rowsInput), nameInput);
+
+                        if (li.getAttribute('data-inserted') === 'false') {
+                            // Insert new data
+                            addRows(sheet, parseInt(rowsInput), timeInput, currentRowIndex);
+                            li.setAttribute('data-inserted', 'true'); // Mark as inserted
+                            currentRowIndex += parseInt(rowsInput); // Update the current row index
+                        } else {
+                            // Update existing data
+                            updateRow(sheet, rowIndex, parseInt(rowsInput), timeInput);
+                        }
                     });
                 });
 
-                document.querySelectorAll('.delete-button').forEach(button => {
-                    button.addEventListener('click', function () {
-                        var li = this.parentElement;
-                        var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
-                        var rowsInput = li.querySelector('.rows-input').value;
-                        deleteRow(sheet, rowIndex, parseInt(rowsInput));
-                        li.parentElement.removeChild(li);
-                    });
-                });
+                // document.querySelectorAll('.delete-button').forEach(button => {
+                //     button.addEventListener('click', function () {
+                //         var li = this.parentElement;
+                //         var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
+                //         var rowsInput = li.querySelector('.rows-input').value;
+                //         deleteRow(sheet, rowIndex, parseInt(rowsInput));
+                //         li.parentElement.removeChild(li);
+                //     });
+                // });
 
                 document.getElementById('add-row-button').addEventListener('click', function () {
                     addNewInputRow();
                 });
+
+                // Toolbar configuration
+                let config = GC.Spread.Sheets.Designer.DefaultConfig;
+                config.commandMap = {
+                    Welcome: {
+                        title: "Welcome",
+                        text: "Welcome",
+                        iconClass: "ribbon-button-welcome",
+                        bigButton: "true",
+                        commandName: "Welcome",
+                        execute: function (context, propertyName, fontItalicChecked) {
+                            alert("Welcome to new designer.");
+                        },
+                    },
+                };
+
+                config.ribbon[0].buttonGroups.unshift({
+                    label: "NewDesigner",
+                    thumbnailClass: "welcome",
+                    commandGroup: {
+                        children: [
+                            {
+                                direction: "vertical",
+                                commands: ["Welcome"],
+                            },
+                        ],
+                    },
+                });
+
+                let designer = new GC.Spread.Sheets.Designer.Designer(
+                    document.getElementById("ss"),
+                    config
+                );
+                spread = designer.getWorkbook();
+                sheet = spread.getActiveSheet();
+                sheet.setColumnCount(100);
             } else {
                 console.error('GC.Spread.Sheets is not defined. Ensure the SpreadJS library is loaded correctly.');
             }
