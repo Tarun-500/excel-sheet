@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>SpreadJS Designer</title>
+	<link href="https://cdn.mescius.com/spreadjs/hosted/css/gc.spread.sheets.excel2013white.17.0.4.css" rel="stylesheet" type="text/css" />
+	<link href="./lib/css/gc.spread.sheets.designer.17.0.4.min.css" rel="stylesheet" type="text/css">
+	<link href="./custom.css" rel="stylesheet" type="text/css">
+</head>
+
+<body unselectable="on">
+    <div class="options-container" style="padding: 10px; margin-bottom: 10px;">  
+        <ul id="gos-list">
+            <li>
+                <label for="no_of_gos">Rows</label>
+                <input type="text" value="6" id="noOfRowsInput">
+                <label for="time_of_go">Time</label>
+                <input type="text" value="10:00" id="timeOfGoInput">
+                <input type="submit" id="submit_gos" >
+            </li>
+        </ul>
+        <button onclick="addGos()">Add New Go</button>
+    </div>
+    <div id="gc-designer-container" role="application" style="height: 80%;"></div>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/gc.spread.sheets.all.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.shapes.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.charts.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.slicers.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.print.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.barcode.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.pdf.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.pivot.pivottables.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.tablesheet.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.ganttsheet.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.formulapanel.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.report.reportsheet.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/plugins/gc.spread.sheets.io.17.0.4.min.js"></script>
+	<script type="text/javascript" src="https://cdn.mescius.com/spreadjs/hosted/scripts/interop/gc.spread.excelio.17.0.4.min.js"></script>
+	
+	<script type="text/javascript" src="./lib/scripts/gc.spread.sheets.designer.resource.en.17.0.4.min.js"></script>
+	<script type="text/javascript" src="./lib/scripts/gc.spread.sheets.designer.all.17.0.4.min.js"></script>
+
+<script type="text/javascript">
+
+function addGos() {
+    let ul = document.getElementById("gos-list");
+    let countBefore = ul.childElementCount;
+
+    // Clone the existing <li> element
+    let existingLi = ul.querySelector("li");
+    let newLi = existingLi.cloneNode(true);
+
+    // Increment button count
+    let buttonCount = countBefore + 1;
+
+    // Append the cloned <li> to the <ul>
+    ul.appendChild(newLi);
+
+    // Get the submit button within the newly cloned <li>
+    let newSubmitButton = newLi.querySelector("#submit_gos");
+
+    // Assign a unique identifier to the submit button
+    newSubmitButton.dataset.buttonNumber = buttonCount;
+    newSubmitButton.classList.add('submit-gos');
+
+    let countAfter = ul.childElementCount;
+
+    console.log("Count before adding: " + countBefore);
+    console.log("Count after adding: " + countAfter);
+}
+
+    let person, sheet ,spread ;
+    window.onload = function () {   
+    let config = GC.Spread.Sheets.Designer.DefaultConfig;
+    config.commandMap = {
+        Welcome: {
+            title: "Welcome",
+            text: "Welcome",
+            iconClass: "ribbon-button-welcome",
+            bigButton: "true",
+            commandName: "Welcome",
+            execute: function (context, propertyName, fontItalicChecked) {
+                alert('Welcome to new designer.');
+            }
+        }
+    }
+
+    config.ribbon[0].buttonGroups.unshift({
+        "label": "NewDesigner",
+        "thumbnailClass": "welcome",
+        "commandGroup": {
+            "children": [
+                {
+                    "direction": "vertical",
+                    "commands": [
+                        "Welcome"
+                    ]
+                }
+            ]
+        }
+    });
+
+    let designer = new GC.Spread.Sheets.Designer.Designer(document.getElementById("gc-designer-container"), config);
+    spread = designer.getWorkbook()
+    sheet = spread.getActiveSheet();
+    sheet.setColumnCount(100);
+    // onedayStructure();
+    // get_div = document.querySelector("")
+    // Get the input elements
+    initSpread(spread);
+    
+    let noOfRowsInput = document.getElementById('noOfRowsInput');
+    let timeOfGoInput = document.getElementById('timeOfGoInput');
+    let submitButton = document.getElementById('submit_gos');    
+    
+    // Update the sheet with default values
+    let defaultRows = parseInt(noOfRowsInput.value);
+    let defaultTime = timeOfGoInput.value;
+    updateSheet(defaultRows, defaultTime);
+
+     // Add event listener to the submit button
+     submitButton.addEventListener('click', function () {
+        let newRows = parseInt(noOfRowsInput.value);
+        let newTime = timeOfGoInput.value;
+        console.log("clicked")
+        updateSheet(newRows, newTime);
+    });
+
+};
+
+
+function updateSheet(totalRows, gosTime) {
+    total_rows = totalRows;
+    gos_time = gosTime;
+    onedayStructure(total_rows,gos_time); 
+}
+
+
+function setCellTag(sheet, row, col, object) {
+    const jsonString = JSON.stringify(object);
+    sheet.setTag(row, col, jsonString);
+}
+
+function getCellTag(sheet, row, col) {
+    const jsonString = sheet.getTag(row, col);
+    try {
+        return JSON.parse(jsonString);
+    } catch (e) {
+        // Handle the case where jsonString is not valid JSON
+        return {};
+    }
+}
+
+function applyStylesWithTag() {
+    let spreadNS = GC.Spread.Sheets;
+    sheet = spread.getActiveSheet();
+    
+    let mainHeaderColor = new spreadNS.Style();
+    mainHeaderColor.backColor = "lightblue"; // Assigning the background color for main header cells
+
+    let rowCount = sheet.getRowCount(),
+        colCount = sheet.getColumnCount();
+
+    for (let i = 0; i < rowCount; i++) {
+        for (let j = 0; j < colCount; j++) {
+            let cellTagObject = getCellTag(sheet, i, j);
+            // Check if 'main_header' key exists and if its value is true
+            if (cellTagObject.hasOwnProperty('main_header') && cellTagObject.main_header === true) {
+                sheet.setStyle(i, j, mainHeaderColor, spreadNS.SheetArea.viewport);
+            }
+        }
+    }
+}
+
+function findColumnIndex(sheet, headerText) {
+    let colCount = sheet.getColumnCount();
+    for (let i = 0; i < colCount; i++) {
+        let cellValue = sheet.getValue(1, i); 
+        if (cellValue === headerText) {
+            return i;
+        }
+    }
+    return -1; // Return -1 if the header is not found
+}
+
+function addUsers() {
+    let usersData = ["User1", "User2", "User3", "User4","User1",
+                 "User2", "User3", "User4","User1", "User2", "User3", "User4"];
+    let usersColumnIndex = findColumnIndex(sheet, "Users");
+    
+    if (usersColumnIndex !== -1) {
+        let rowCount = usersData.length;
+        for (let i = 0; i < rowCount; i++) {
+            sheet.setValue(i + 2, usersColumnIndex, usersData[i]); // Assuming user data starts from the second row
+        }
+    } else {
+        console.log("Columns 'Users' not found.");
+    }
+}
+
+
+function onedayStructure(total_rows,gos_time ) {
+    let colCount = 9 
+    let spreadNS = GC.Spread.Sheets;
+    sheet = spread.getActiveSheet();
+    let today = new Date();
+
+    sheet.setValue(0, 0, today.toDateString());
+    sheet.setValue(1, 0, "Course");
+    sheet.setValue(1, 1, "FCP");
+    sheet.setValue(1, 2, "RCP");
+    sheet.setValue(1, 3, "Class");
+    sheet.setValue(1, 4, "T/O");
+    sheet.setValue(1, 5, "Area");
+    sheet.setValue(1, 6, "Status");
+    sheet.setValue(1, 7, "Users");
+    sheet.setValue(1, 8, "");
+
+    setCellTag(sheet, 0, 0, { date_header: true , header:true});
+    setCellTag(sheet, 0, 1, { header:true});
+    setCellTag(sheet, 0, 2, { header:true});
+    setCellTag(sheet, 0, 3, { header: true });
+    setCellTag(sheet, 0, 4, { header: true });
+    setCellTag(sheet, 0, 5, { header: true });
+    setCellTag(sheet, 0, 6, { header: true });
+    setCellTag(sheet, 0, 7, { header: true });
+    setCellTag(sheet, 0, 8, { header: true });
+
+    setCellTag(sheet, 1, 0, { main_header: true,    is_coures: true });
+    setCellTag(sheet, 1, 1, { main_header: true,    is_fcp: true });
+    setCellTag(sheet, 1, 2, { main_header: true,    is_rcp: true });
+    setCellTag(sheet, 1, 3, { main_header: true,    is_class: true });
+    setCellTag(sheet, 1, 4, { main_header: true,    is_to: true });
+    setCellTag(sheet, 1, 5, { main_header: true,    is_area: true });
+    setCellTag(sheet, 1, 6, { main_header: true,    is_status: true });
+    setCellTag(sheet, 1, 7, { main_header: true,    is_users: true });
+    setCellTag(sheet, 1, 8, { main_header: false,   is_indicator: true });
+
+    classes = ['ADR6', 'ADR2', 'ADR-3']
+    Statuses = ['MND', 'FND', 'SND']
+
+    let total_columns = 9;
+    for (let row = 0; total_rows >= row; row++) {
+        for (let col = 0; total_columns >= col; col++) {
+            let cellTagObject = getCellTag(sheet, row, col);
+            if (cellTagObject.hasOwnProperty('is_fcp') && cellTagObject.is_fcp === true) {
+                for(let add_tag = 0; total_rows >= add_tag; add_tag++) {
+                    setCellTag(sheet, row + 1 + add_tag, col, { fcp_cell: true, day_is: today.toDateString(), go : 1 });
+                }
+            }
+            if (cellTagObject.hasOwnProperty('is_to') && cellTagObject.is_to === true) {
+                for(let add_tag = 0; total_rows >= add_tag; add_tag++) {
+                    sheet.setValue(row + 2 + add_tag, col, gos_time);
+                    setCellTag(sheet, row + 1 + add_tag, col, { to_cell: true, day_is: today.toDateString(), go : 1 });
+                }
+            }
+            if(cellTagObject.hasOwnProperty('is_class') && cellTagObject.is_class === true){
+                for(let add_tag = 0; total_rows >= add_tag; add_tag++) {
+                    setCellTag(sheet, row + 2 + add_tag, col, { class_cell: true, day_is: today.toDateString(),go : 1 });
+                    let classDropdown = new spreadNS.CellTypes.ComboBox();
+                    classDropdown.items([...classes]);
+                    sheet.getCell(row + 2 + add_tag, col).cellType(classDropdown);
+                }
+            }
+        }
+    }
+    addUsers(); // Add users
+    applyStylesWithTag(); // Apply styles
+}
+
+
+
+
+// function checkCellTag() {
+//     let rowCount = sheet.getRowCount(),
+//         colCount = sheet.getColumnCount();
+//     for (let i = 0; i < rowCount; i++) {
+//         for (let j = 0; j < colCount; j++) {
+//             let cellTagObject = getCellTag(sheet, i, j);
+//             if (cellTagObject && Object.keys(cellTagObject).length > 0) {
+//                 console.log(i,j,cellTagObject);
+//             }
+//         }
+//     }
+// }
+
+function initSpread(spread) {
+    spread.bind(GC.Spread.Sheets.Events.ClipboardPasted, function (sender, args) {
+    console.log("ClipboardPasted", args);
+});
+
+    //This example stops the active sheet from changing.
+spread.bind(GC.Spread.Sheets.Events.ActiveSheetChanging, function (sender, args) {
+//Cancel sheet switching.
+console.log("sender",sender , "ar",args)
+args.cancel = true;
+});
+
+    };
+function _getElementById(id){
+    return document.getElementById(id);
+}
+</script>
+
+</body>
+
+</html>

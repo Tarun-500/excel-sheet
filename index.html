@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpreadJS Excel Sheet</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <!-- Load SpreadJS library -->
+    <link rel="stylesheet" type="text/css" href="https://developer.mescius.com/spreadjs/demos/en/purejs/node_modules/@mescius/spread-sheets/styles/gc.spread.sheets.excel2013white.css" />
+    <script src="https://developer.mescius.com/spreadjs/demos/en/purejs/node_modules/@mescius/spread-sheets/dist/gc.spread.sheets.all.min.js" type="text/javascript"></script>
+    <script src="https://developer.mescius.com/spreadjs/demos/spread/source/js/license.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://cdn.grapecity.com/spreadjs/14.2.3/css/gc.spread.sheets.designer.min.css" />
+    <script src="https://cdn.grapecity.com/spreadjs/14.2.3/js/gc.spread.sheets.designer.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/styles.css" />
+</head>
+<body>
+    <div>
+        <ul id="input-list">
+            <li>
+                <span>Rows </span> <input type="text" class="rows-input" />
+                <span>Name </span> <input type="text" class="name-input" />
+                <button class="submit-button">Submit</button>
+                <button class="delete-button">Delete</button>
+            </li>
+        </ul>
+        <button id="add-row-button">Add Row</button>
+    </div>
+    <div id="ss" style="width: 100%; height: 600px"></div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (typeof GC !== 'undefined' && GC.Spread.Sheets) {
+                var spread = new GC.Spread.Sheets.Workbook(document.getElementById("ss"), { sheetCount: 1 });
+                var sheet = spread.getActiveSheet();
+
+                // Set column width
+                sheet.setColumnWidth(0, 50); // ID column
+                sheet.setColumnWidth(1, 150); // Name column
+
+                // Style header
+                var headerStyle = new GC.Spread.Sheets.Style();
+                headerStyle.backColor = "#4CAF50";
+                headerStyle.foreColor = "#FFFFFF";
+                headerStyle.font = "bold 14px Arial";
+                headerStyle.hAlign = GC.Spread.Sheets.HorizontalAlign.center;
+                headerStyle.vAlign = GC.Spread.Sheets.VerticalAlign.center;
+                headerStyle.borderBottom = new GC.Spread.Sheets.LineBorder("#000000", GC.Spread.Sheets.LineStyle.thin);
+
+                // Set header values
+                sheet.setValue(0, 0, "ID");
+                sheet.setValue(0, 1, "Name");
+
+                // Apply header style
+                sheet.setStyle(0, 0, headerStyle);
+                sheet.setStyle(0, 1, headerStyle);
+
+                // Apply styles to cells
+                var cellStyle = new GC.Spread.Sheets.Style();
+                cellStyle.font = "12px Arial";
+                cellStyle.hAlign = GC.Spread.Sheets.HorizontalAlign.left;
+                cellStyle.vAlign = GC.Spread.Sheets.VerticalAlign.center;
+
+                function addRows(sheet, rowCount, name) {
+                    var startRow = 1; // Start after the header row
+                    var currentRow = startRow;
+
+                    // Find the first empty row
+                    while (sheet.getValue(currentRow, 0) !== null) {
+                        currentRow++;
+                    }
+
+                    sheet.addRows(currentRow, rowCount); // Add rows to the sheet
+                    for (var i = 0; i < rowCount; i++) {
+                        sheet.setValue(currentRow + i, 0, currentRow + i); // Set ID
+                        sheet.setValue(currentRow + i, 1, name); // Set Name
+                    }
+                    // Apply cell style
+                    for (var row = currentRow; row < currentRow + rowCount; row++) {
+                        for (var col = 0; col <= 1; col++) {
+                            sheet.setStyle(row, col, cellStyle);
+                        }
+                    }
+                }
+
+                function updateRow(sheet, rowIndex, rowCount, name) {
+                    // Clear existing rows
+                    sheet.deleteRows(rowIndex, rowCount);
+
+                    // Add new rows
+                    sheet.addRows(rowIndex, rowCount);
+                    for (var i = 0; i < rowCount; i++) {
+                        sheet.setValue(rowIndex + i, 0, rowIndex + i); // Set ID
+                        sheet.setValue(rowIndex + i, 1, name); // Set Name
+                    }
+                    // Apply cell style
+                    for (var row = rowIndex; row < rowIndex + rowCount; row++) {
+                        for (var col = 0; col <= 1; col++) {
+                            sheet.setStyle(row, col, cellStyle);
+                        }
+                    }
+                }
+
+                function deleteRow(sheet, rowIndex, rowCount) {
+                    sheet.deleteRows(rowIndex, rowCount);
+                }
+
+                function addNewInputRow() {
+                    var ul = document.getElementById('input-list');
+                    var newLi = document.createElement('li');
+                    newLi.innerHTML = `
+                        <span>Rows </span> <input type="text" class="rows-input" />
+                        <span>Name </span> <input type="text" class="name-input" />
+                        <button class="submit-button">Submit</button>
+                        <button class="delete-button">Delete</button>
+                    `;
+                    ul.appendChild(newLi);
+
+                    // Add event listener for the new submit button
+                    newLi.querySelector('.submit-button').addEventListener('click', function () {
+                        var li = this.parentElement;
+                        var rowsInput = li.querySelector('.rows-input').value;
+                        var nameInput = li.querySelector('.name-input').value;
+                        var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
+                        addRows(sheet, parseInt(rowsInput), nameInput);
+                    });
+
+                    // Add event listener for the delete button
+                    newLi.querySelector('.delete-button').addEventListener('click', function () {
+                        var li = this.parentElement;
+                        var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
+                        var rowsInput = li.querySelector('.rows-input').value;
+                        deleteRow(sheet, rowIndex, parseInt(rowsInput));
+                        ul.removeChild(newLi);
+                    });
+                }
+
+                // Add event listeners for buttons
+                document.querySelectorAll('.submit-button').forEach(button => {
+                    button.addEventListener('click', function () {
+                        var li = this.parentElement;
+                        var rowsInput = li.querySelector('.rows-input').value;
+                        var nameInput = li.querySelector('.name-input').value;
+                        var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
+                        addRows(sheet, parseInt(rowsInput), nameInput);
+                    });
+                });
+
+                document.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', function () {
+                        var li = this.parentElement;
+                        var rowIndex = parseInt(li.getAttribute('data-row-index')) || 1;
+                        var rowsInput = li.querySelector('.rows-input').value;
+                        deleteRow(sheet, rowIndex, parseInt(rowsInput));
+                        li.parentElement.removeChild(li);
+                    });
+                });
+
+                document.getElementById('add-row-button').addEventListener('click', function () {
+                    addNewInputRow();
+                });
+            } else {
+                console.error('GC.Spread.Sheets is not defined. Ensure the SpreadJS library is loaded correctly.');
+            }
+        });
+    </script>
+</body>
+</html>
